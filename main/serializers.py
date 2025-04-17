@@ -7,12 +7,19 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 import random
-from .models import EmailVerificationCode
+from .models import EmailVerificationCode, Profile
 from .tasks import send_verification_email  # Импорт задачи Celery
 
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["user_id"] = user.id
+
+        return token
+
     def validate(self, attrs):
         # Сначала пытаемся найти пользователя по `username`
         try:
@@ -91,3 +98,57 @@ class UserSerializer(serializers.ModelSerializer):
 #         validated_data["password"] = make_password(validated_data["password"])
 #         return super().create(validated_data)
     
+class CurrentUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields =["id", "username", "email"]
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["avatar", "phone_number"]
+    
+    def validate_avatar(self, value):
+        # Проверка размера
+        if value.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError("Максимальный размер файла — 2MB")
+        
+        # Проверка расширения
+        valid_extensions = (".jpg", ".jpeg", ".png")
+        if not value.name.lower().endswith(valid_extensions):
+            raise serializers.ValidationError("Допустимые форматы: JPG, JPEG, PNG")
+
+        return value
+
+    
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer()
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "profile"]
+    # instance=request.user — объект, который обновляем.    data=request.data — данные от клиента.
+    def update(self, instance, validate_date):  
+        profile_data = validate_date.pop("profile", {})
+        profile = instance.profile
+
+        instance.username = validate_date.get("username", instance.username)
+        instance.email = validate_date.get("email", instance.email)
+        instance.save()
+
+        profile.phone_number = profile_data.get("phone_number", None)
+        avatar =profile_data.get("avatar", None)
+
+        if avatar:
+            profile.avatar = avatar
+        profile.save()
+
+        return instance
+
+
+
+
+
+        
+

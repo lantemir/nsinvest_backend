@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     "main",
     "django_celery_beat",
     "rest_framework_simplejwt.token_blacklist",  # ✅ Добавь поддержку blacklisting токенов
+    "ckeditor",
+    "ckeditor_uploader",
 ]
 
 MIDDLEWARE = [
@@ -154,6 +156,7 @@ DATABASES = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+CKEDITOR_UPLOAD_PATH = "uploads/"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -180,6 +183,9 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,  # ✅ Включаем blacklisting токенов
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",  # должно быть по умолчанию
+    "USER_ID_CLAIM": "user_id",  # вот это — самое важное!
+    
 }
 
 

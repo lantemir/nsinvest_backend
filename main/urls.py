@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import CustomTokenRefreshView, RegisterView, LogoutView, CustomTokenObtainPairView, DownloadImageView, VerifyEmailView, ResendVerificationCodeView, GetUserByUsernameView
+from .views import CustomTokenRefreshView, RegisterView, LogoutView, CustomTokenObtainPairView, DownloadImageView, VerifyEmailView, ResendVerificationCodeView, GetUserByUsernameView, GetCurrentUserView, ProfileView
 
 
 urlpatterns = [
@@ -13,5 +13,7 @@ urlpatterns = [
     # path("messages/", MessageListCreateView.as_view(), name="message-list"),
     path("auth/resend-verification-code/", ResendVerificationCodeView.as_view(), name="resend-verification-code"),
     path("auth/get-user-by-username/<str:username>/", GetUserByUsernameView.as_view(), name="get_user_by_username"),
+    path("auth/me/", GetCurrentUserView.as_view(), name="get_current_user"),
     path("download-image/<int:image_id>/", DownloadImageView.as_view(), name="download_image"),
+    path("auth/profile", ProfileView.as_view(), name="user-profile"),
 ]

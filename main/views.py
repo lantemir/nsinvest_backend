@@ -9,7 +9,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import ChatRoom,EmailVerificationCode
-from .serializers import ChatRoomSerializer, UserSerializer
+from .serializers import ChatRoomSerializer, UserSerializer, CurrentUserSerializer, UserProfileSerializer
 
 from .models import ImageModel
 from rest_framework.views import APIView
@@ -26,6 +26,7 @@ from django.utils.decorators import method_decorator
 from .tasks import send_verification_email
 from.serializers import CustomTokenObtainPairSerializer
 from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 
@@ -202,6 +203,7 @@ class CustomTokenRefreshView(APIView):
         Обновляет `access_token` и одновременно обновляет `refresh_token`.
         """
         refresh_token = request.COOKIES.get("refresh_token")
+        print("🔄 Получили refresh_token из cookie:", refresh_token)
 
         if not refresh_token:
             raise AuthenticationFailed("Не авторизован", code="unauthorized")
@@ -209,19 +211,38 @@ class CustomTokenRefreshView(APIView):
         try:
             # Проверяем refresh_token
             token = RefreshToken(refresh_token)
-            new_access_token = str(token.access_token)
+            user_id = token.get("user_id")
+
+            if not user_id:
+                raise AuthenticationFailed("Refresh-токен не содержит user_id")
+            
+            user = User.objects.get(id=user_id)
+
+            # ✅ Генерируем токены от имени пользователя
+            new_refresh_token = RefreshToken.for_user(user)
+            new_access_token = str(new_refresh_token.access_token)
+
+
+           
+            print("💬 Access:", new_access_token)
+            print("💬 New refresh:", str(new_refresh_token))
+
+            # ❌ старый refresh_token — в blacklist
+            token.blacklist()
+
+           # new_access_token["user_id"] = token["user_id"]
 
             # Генерируем новый `refresh_token`
-            new_refresh_token = str(RefreshToken())
+            #new_refresh_token = str(RefreshToken())
+           # print("💬 New refresh:", new_refresh_token)
 
-            # Удаляем старый `refresh_token` (если используем blacklist)
-            token.blacklist()
+       
 
             # Обновляем `refresh_token` в `httpOnly-cookie`
             response = Response({"access": new_access_token})
             response.set_cookie(
                 key="refresh_token",
-                value=new_refresh_token,
+                value=str(new_refresh_token),
                 httponly=True,  # ✅ Фронт не видит куку
                 secure=settings.DEBUG is False,
                 samesite="Lax",  # ✅ Защита от CSRF
@@ -287,3 +308,33 @@ class GetUserByUsernameView(APIView):
             return Response({"email": user.email}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+        
+class GetCurrentUserView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request):   
+        print("👤 request.user:", request.user)
+        print("🔐 headers:", request.headers.get('Authorization'))
+        
+        try:
+            serializers = CurrentUserSerializer(request.user)
+            return Response(serializers.data)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data)
+    
+    def patch(self, request):
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+

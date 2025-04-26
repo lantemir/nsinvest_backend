@@ -9,7 +9,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import ChatRoom,EmailVerificationCode
-from .serializers import ChatRoomSerializer, UserSerializer, CurrentUserSerializer, UserProfileSerializer
+from .serializers import (ChatRoomSerializer, UserSerializer, CurrentUserSerializer, 
+                          UserProfileSerializer, CategorySerializer, CourseSerializer, LessonSerializer)
 
 from .models import ImageModel
 from rest_framework.views import APIView
@@ -27,6 +28,9 @@ from .tasks import send_verification_email
 from.serializers import CustomTokenObtainPairSerializer
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.pagination import PageNumberPagination
+
+from .models import Category, Course, Lesson
 
 
 
@@ -150,12 +154,18 @@ class ResendVerificationCodeView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Пользователь с таким email не найден"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Удаляем все старые коды (если разрешено хранить несколько)
+        EmailVerificationCode.objects.filter(user=user).delete()
+
         new_code = str(random.randint(100000, 999999))
 
-        # Обновляем или создаем код подтверждения
-        code_obj, created = EmailVerificationCode.objects.update_or_create(
-            user=user, defaults={"code": new_code}
-        )
+        # Создаем новый код
+        EmailVerificationCode.objects.create(user=user, code=new_code)
+
+        # # Обновляем или создаем код подтверждения
+        # code_obj, created = EmailVerificationCode.objects.update_or_create(
+        #     user=user, defaults={"code": new_code}
+        # )
 
         send_verification_email.delay(email, new_code)
 
@@ -337,4 +347,66 @@ class ProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+    
+class CategoryView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+    
+class CustomCoursePagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    
+class CoursesView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request, category_id):
+
+        print("category_id@@@", category_id)
+        print("request@@@", request)
+
+        courses  = Course.objects.filter(category_id = category_id)
+
+        
+
+        if not courses.exists():
+            return Response({"message":"Курсы не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = CustomCoursePagination()
+        paginates_courses = paginator.paginate_queryset(courses, request)
+
+
+        serializer = CourseSerializer(paginates_courses, many=True)
+        print("CoursesViewserializer@@@", serializer.data)
+        return paginator.get_paginated_response(serializer.data)
+
+class LessonsView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self, request, course_id):
+        lessons = Lesson.objects.filter(course_id = course_id)
+        if not lessons.exists():
+            return Response ({"message":"Уроки не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = CustomCoursePagination()
+        paginates_lessons = paginator.paginate_queryset(lessons, request)
+        serializer = LessonSerializer(paginates_lessons, many=True)
+        print("LessonSerializerserializer@@@", serializer.data)
+        return paginator.get_paginated_response(serializer.data)
+    
+class LessonById(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request, lesson_id):
+        print("lesson_id_LessonById@@@" , lesson_id)
+        lesson = Lesson.objects.filter(id=lesson_id).first()
+        if not lesson:
+            return Response({"message":"Урок не найден"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = LessonSerializer(lesson) 
+        return Response(serializer.data)
+
+
+
 

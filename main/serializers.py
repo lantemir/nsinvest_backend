@@ -7,7 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 import random
-from .models import EmailVerificationCode, Profile
+from .models import EmailVerificationCode, Profile, Category, Course, Lesson
 from .tasks import send_verification_email  # Импорт задачи Celery
 
 
@@ -98,10 +98,6 @@ class UserSerializer(serializers.ModelSerializer):
 #         validated_data["password"] = make_password(validated_data["password"])
 #         return super().create(validated_data)
     
-class CurrentUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields =["id", "username", "email"]
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,7 +116,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         return value
 
-    
+class CurrentUserSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer()
+    class Meta:
+        model = User
+        fields =["id", "username", "email", "profile"]    
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer()
@@ -145,6 +146,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         profile.save()
 
         return instance
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = "__all__"
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = "__all__"
+
+class LessonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lesson
+        fields = "__all__"
 
 
 

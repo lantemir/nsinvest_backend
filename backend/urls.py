@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
+    path('grappelli/', include('grappelli.urls')),
     path('admin/', admin.site.urls),
     path("api/", include("main.urls")),
     path("ckeditor/", include("ckeditor_uploader.urls")), 

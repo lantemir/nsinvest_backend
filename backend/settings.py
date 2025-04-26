@@ -49,7 +49,7 @@ SESSION_COOKIE_SECURE = False # ❌ Отключаем secure cookies для л�
 
 INSTALLED_APPS = [   
     
- 
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -220,7 +220,7 @@ EMAIL_PORT = 587  # Порт для TLS
 EMAIL_USE_TLS = True  # Включаем защиту
 
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')   # Твой email
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD'),  # Пароль приложения (НЕ обычный пароль!)
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Пароль приложения (НЕ обычный пароль!)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

@@ -79,7 +79,7 @@ class Category(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.flug:
+        if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 

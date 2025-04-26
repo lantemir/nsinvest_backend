@@ -1,6 +1,9 @@
 from django.urls import path
 
-from .views import CustomTokenRefreshView, RegisterView, LogoutView, CustomTokenObtainPairView, DownloadImageView, VerifyEmailView, ResendVerificationCodeView, GetUserByUsernameView, GetCurrentUserView, ProfileView
+from .views import (CustomTokenRefreshView, RegisterView, LogoutView, 
+                    CustomTokenObtainPairView, DownloadImageView, VerifyEmailView, 
+                    ResendVerificationCodeView, GetUserByUsernameView, GetCurrentUserView,
+                    CategoryView, ProfileView, CoursesView, LessonsView, LessonById)
 
 
 urlpatterns = [
@@ -15,5 +18,9 @@ urlpatterns = [
     path("auth/get-user-by-username/<str:username>/", GetUserByUsernameView.as_view(), name="get_user_by_username"),
     path("auth/me/", GetCurrentUserView.as_view(), name="get_current_user"),
     path("download-image/<int:image_id>/", DownloadImageView.as_view(), name="download_image"),
-    path("auth/profile", ProfileView.as_view(), name="user-profile"),
+    path("auth/profile/", ProfileView.as_view(), name="user-profile"),
+    path("categories/", CategoryView.as_view(), name="category"),
+    path("courses/by-category/<int:category_id>/", CoursesView.as_view(), name="courses_category"),
+    path("lesson/by-course/<int:course_id>/", LessonsView.as_view(), name="lesson_category"),
+    path("lesson/by-id/<int:lesson_id>/", LessonById.as_view(), name="lesson_id" ), 
 ]

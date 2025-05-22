@@ -3,8 +3,9 @@ from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ckeditor_uploader.fields import RichTextUploadingField
 from django.utils.text import slugify
+from django_ckeditor_5.fields import CKEditor5Field
+
 
 # Create your models here.
 
@@ -77,14 +78,21 @@ class EmailVerificationCode(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
+    path = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text="Путь для фронта (например: programming, eng-basic)" )
+    order = models.PositiveSmallIntegerField(default=0, help_text="Чем меньше значение — тем выше категория")
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        if not self.path:
+            self.path = self.slug
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        ordering = ['order']  
     
 class Course(models.Model):
     title = models.CharField(max_length=200)
@@ -98,7 +106,7 @@ class Course(models.Model):
     
 class Lesson(models.Model):
     title = models.CharField(max_length=200)
-    content = RichTextUploadingField()
+    content = CKEditor5Field('Text', config_name='default')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     video = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
@@ -109,3 +117,33 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.order + 1}. {self.title}"
     
+class Interesting(models.Model):
+    title = models.CharField(max_length=200)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name="category", null=True, blank=True)
+    content = CKEditor5Field('Text', config_name='default')
+    video = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    cover = models.ImageField(upload_to="interesting/cover/", blank=True, null=True)
+
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to="books/")
+    cover = models.ImageField(upload_to="books/cover/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+    
+class Meeting(models.Model):
+    title = models.CharField(max_length=200)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time =  models.TimeField()
+    youtube_link = models.TextField(blank=True, null=True)
+    zoom_link = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.date})"    

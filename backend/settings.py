@@ -63,9 +63,9 @@ INSTALLED_APPS = [
     "main",
     "django_celery_beat",
     "rest_framework_simplejwt.token_blacklist",  # ✅ Добавь поддержку blacklisting токенов
-    "ckeditor",
-    "ckeditor_uploader",
+    'django_ckeditor_5',   
 ]
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -156,7 +156,20 @@ DATABASES = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-CKEDITOR_UPLOAD_PATH = "uploads/"
+
+
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = "authenticated"  # или "staff", "any"
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|', 'bold', 'italic', 'link',
+            'bulletedList', 'numberedList', 'blockQuote',
+            '|', 'insertTable', 'imageUpload', 'mediaEmbed',
+            'undo', 'redo'
+        ],
+    }
+}
+CKEDITOR5_UPLOADS_PATH = "uploads/"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -222,6 +235,8 @@ EMAIL_USE_TLS = True  # Включаем защиту
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')   # Твой email
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Пароль приложения (НЕ обычный пароль!)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+FRONTEND_URL = "http://localhost:3000"  # или домен продакшена
 
 
 # Настройки Celery

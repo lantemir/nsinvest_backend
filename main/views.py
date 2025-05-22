@@ -10,7 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import ChatRoom,EmailVerificationCode
 from .serializers import (ChatRoomSerializer, UserSerializer, CurrentUserSerializer, 
-                          UserProfileSerializer, CategorySerializer, CourseSerializer, LessonSerializer)
+                          UserProfileSerializer, CategorySerializer, CourseSerializer, 
+                          LessonSerializer, InterestingSerializer, BookSerializer, MeetingSerializer)
 
 from .models import ImageModel
 from rest_framework.views import APIView
@@ -29,8 +30,14 @@ from.serializers import CustomTokenObtainPairSerializer
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.pagination import PageNumberPagination
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Q
 
-from .models import Category, Course, Lesson
+from .models import Category, Course, Lesson, Interesting, Book, Meeting
+
+
 
 
 
@@ -360,6 +367,39 @@ class CustomCoursePagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+class InterestingView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request, category_id):
+        print("request@@@", request)
+        search_query = request.query_params.get("search", "")
+
+        interesting = Interesting.objects.filter(Q(category_id = category_id) & Q(title__icontains = search_query))
+
+        if not interesting.exists():
+            return Response({"message":"Интересные не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = CustomCoursePagination()
+        paginates_interesting = paginator.paginate_queryset(interesting, request) 
+
+        serializer = InterestingSerializer(paginates_interesting, many=True)
+        print("InterestingViewerializer@@@", serializer.data)
+        return paginator.get_paginated_response(serializer.data)
+
+class InterestingViewById(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request, interest_id):
+
+        interest = Interesting.objects.get(id = interest_id)
+        if not interest.DoesNotExist:
+            return Response({"message":"Интересные не найдены для этого id"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = InterestingSerializer(interest)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
     
 class CoursesView(APIView):
     permission_classes=[IsAuthenticated]
@@ -369,16 +409,37 @@ class CoursesView(APIView):
         print("category_id@@@", category_id)
         print("request@@@", request)
 
-        courses  = Course.objects.filter(category_id = category_id)
+        search_query = request.query_params.get("search","")
 
+        courses  = Course.objects.filter(Q(category_id = category_id) & Q(title__icontains = search_query) )
         
-
         if not courses.exists():
             return Response({"message":"Курсы не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
         paginator = CustomCoursePagination()
         paginates_courses = paginator.paginate_queryset(courses, request)
 
+        serializer = CourseSerializer(paginates_courses, many=True)
+        print("CoursesViewserializer@@@", serializer.data)
+        return paginator.get_paginated_response(serializer.data)    
+    
+class CoursesViewByName(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request, category_name):
+
+        print("category_name@@@", category_name)
+        print("request@@@", request)
+
+        search_query = request.query_params.get("search","")
+
+        courses  = Course.objects.filter(Q(category__slug = category_name) & Q(title__icontains = search_query) )
+        
+        if not courses.exists():
+            return Response({"message":"Курсы не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = CustomCoursePagination()
+        paginates_courses = paginator.paginate_queryset(courses, request)
 
         serializer = CourseSerializer(paginates_courses, many=True)
         print("CoursesViewserializer@@@", serializer.data)
@@ -408,5 +469,141 @@ class LessonById(APIView):
         return Response(serializer.data)
 
 
+class ChangePassword(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self, request):
+        username = request.data.get("username")
+        new_password = request.data.get("password")
+
+        if not username or not new_password:
+            return Response({"error": "логин и пароль обязательны"}, status= status.HTTP_400_BAD_REQUEST)
+        
+        try: 
+            user = User.objects.get(username = username)
+            user.password = make_password(new_password)
+            user.save()
+            return Response({"message": "Пароль успешно обновлён"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+        
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email обязателен"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+        
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}"
+        # html_message = f"""
+        #     <p>Вы запросили сброс пароля.</p>
+        #     <p>Перейдите по ссылке для восстановления пароля:</p>
+        #     <p><a href="{reset_link}">{reset_link}</a></p>
+        #     """
+        
+        html_message = f"""
+            <!DOCTYPE html>
+            <html lang="ru">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Сброс пароля</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
+                <div style="text-align: center;">
+                    <img src="https://moo.kz/static/logo.png" alt="moo.kz" style="max-height: 60px; margin-bottom: 20px;" />
+                    <h2 style="color: #333;">Сброс пароля</h2>
+                    <p style="color: #555;">Вы запросили сброс пароля на сайте <strong>moo.kz</strong>.</p>
+                    <p style="color: #555;">Нажмите кнопку ниже, чтобы изменить пароль:</p>
+                    <a href="{reset_link}" style="
+                        display: inline-block;
+                        padding: 12px 24px;
+                        margin: 20px 0;
+                        color: white;
+                        background-color: #007bff;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    ">
+                    Сбросить пароль
+                    </a>
+                    <p style="color: #999; font-size: 12px;">Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
+                </div>
+                </div>
+            </body>
+            </html>
+            """
+
+        send_mail(
+            subject="Сброс пароля",
+            message="",
+            from_email='moo.kz <lan888developer@gmail.com>',
+            recipient_list=[user.email],        
+            html_message=html_message,
+        )
+
+        return Response({"message": "Письмо отправлено"}, status=status.HTTP_200_OK)
+    
+class ResetPasswordConfirmView(APIView):
+    def post(self, request):
+        uidb64 = request.data.get("uid")
+        token = request.data.get("token")
+        new_password = request.data.get("password")
+
+        if not uidb64 or not token or not new_password:
+            return Response({"error": "Все поля обязательны"}, status=400)
+        
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"error": "Неверная ссылка или пользователь не найден."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"error": "Не действительный или истёкший токен"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"message":"Пароль успешно изменен."},status=status.HTTP_200_OK)
+
+class BookView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self, request):
+
+            category_id = request.query_params.get("category_id")   
+
+            print("BookView_category_id@@@ " , category_id)    
+
+            if category_id:
+                books = Book.objects.filter(category_id=category_id)
+            else:
+
+                books = Book.objects.all()
+            if not books.exists():
+                return Response({"message": "Нет книг"}, status=status.HTTP_404_NOT_FOUND)
+            
+            paginator = CustomCoursePagination()
+            paginates_books = paginator.paginate_queryset(books, request)
+            serializer = BookSerializer(paginates_books, many=True)
+            print("LessonSerializerserializer@@@", serializer.data)
+            return paginator.get_paginated_response(serializer.data)
 
 
+class MeetingView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self, request):
+
+        meeting = Meeting.objects.all()
+        if not meeting.exists():
+            return Response({"message": "no meetings"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = MeetingSerializer(meeting, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+  

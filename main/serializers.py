@@ -7,7 +7,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 import random
-from .models import EmailVerificationCode, Profile, Category, Course, Lesson
+from .models import EmailVerificationCode, Profile, Category, Course, Lesson, Interesting, Book, Meeting
 from .tasks import send_verification_email  # Импорт задачи Celery
 
 
@@ -162,7 +162,21 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = "__all__"
 
+class InterestingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Interesting
+        fields = "__all__"
 
+
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = "__all__"
+
+class MeetingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meeting
+        fields= "__all__"
 
 
 

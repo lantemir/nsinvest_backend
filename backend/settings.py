@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -35,11 +36,15 @@ DEBUG = os.getenv("DEBUG") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+parsed = urlparse(frontend_url)
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Next.js dev
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = [f"{parsed.scheme}://{parsed.netloc}"]
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # Next.js dev
+#     "http://127.0.0.1:3000",
+# ]
 
 CORS_ALLOW_CREDENTIALS = True  # ✅ Разрешаем куки и авторизацию
 CSRF_COOKIE_SECURE = False  # ❌ Отключаем secure cookies для локальной разработки
@@ -105,7 +110,7 @@ CHANNEL_LAYERS = {
         # В продакшене нужно использовать Redis:
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [("redis", 6379)],
         },
     },
 }
@@ -219,6 +224,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]  # Каталог для статических файлов
+STATIC_ROOT = BASE_DIR / "staticfiles"  # ← обязательно для collectstatic
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -237,10 +243,14 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Пароль прил�
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 FRONTEND_URL = "http://localhost:3000"  # или домен продакшена
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
 # Настройки Celery
-CELERY_BROKER_URL = "redis://localhost:6379/0"
+# CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+# CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://redis:6379")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 

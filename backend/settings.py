@@ -47,9 +47,10 @@ CORS_ALLOWED_ORIGINS = [f"{parsed.scheme}://{parsed.netloc}"]
 # ]
 
 CORS_ALLOW_CREDENTIALS = True  # ✅ Разрешаем куки и авторизацию
-CSRF_COOKIE_SECURE = False  # ❌ Отключаем secure cookies для локальной разработки
-SESSION_COOKIE_SECURE = False # ❌ Отключаем secure cookies для локальной разработки
+CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False") == "True"  # ❌ Отключаем secure cookies для локальной разработки
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False") == "True" # ❌ Отключаем secure cookies для локальной разработки
 
+CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
 # Application definition
 
 INSTALLED_APPS = [   

@@ -50,8 +50,14 @@ CORS_ALLOW_CREDENTIALS = True  # ✅ Разрешаем куки и автори
 CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False") == "True"  # ❌ Отключаем secure cookies для локальной разработки
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False") == "True" # ❌ Отключаем secure cookies для локальной разработки
 
-print("CSRF_TRUSTED_ORIGINS =", os.getenv("CSRF_TRUSTED_ORIGINS", "").split(","))
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000"]
+else:
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+
 # Application definition
 
 INSTALLED_APPS = [   

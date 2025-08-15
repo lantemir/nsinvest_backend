@@ -130,6 +130,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",  # 👈 должно быть так
     ],
+    "DEFAULT_PAGINATION_CLASS": "backend.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 6,
 }
 # REST_FRAMEWORK = {
 #     "DEFAULT_AUTHENTICATION_CLASSES": (

@@ -125,6 +125,12 @@ class Interesting(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     cover = models.ImageField(upload_to="interesting/cover/", blank=True, null=True)
 
+    def __str__(self) -> str:
+        return self.title  # <-- то, что увидишь в списке в админке
+    class Meta:
+        verbose_name = "Интересное"
+        verbose_name_plural = "Интересные"
+
 class Book(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)

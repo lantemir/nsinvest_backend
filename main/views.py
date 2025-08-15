@@ -37,7 +37,7 @@ from django.db.models import Q
 
 from .models import Category, Course, Lesson, Interesting, Book, Meeting
 
-
+from backend.pagination import StandardResultsSetPagination
 
 
 
@@ -380,7 +380,7 @@ class InterestingView(APIView):
         if not interesting.exists():
             return Response({"message":"Интересные не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
-        paginator = CustomCoursePagination()
+        paginator = StandardResultsSetPagination()
         paginates_interesting = paginator.paginate_queryset(interesting, request) 
 
         serializer = InterestingSerializer(paginates_interesting, many=True)
@@ -390,11 +390,8 @@ class InterestingView(APIView):
 class InterestingViewById(APIView):
     permission_classes=[IsAuthenticated]
 
-    def get(self, request, interest_id):
-
-        interest = Interesting.objects.get(id = interest_id)
-        if not interest.DoesNotExist:
-            return Response({"message":"Интересные не найдены для этого id"}, status=status.HTTP_404_NOT_FOUND)
+    def get(self, request, interest_id):    
+        interest = get_object_or_404(Interesting, id=interest_id)       
         serializer = InterestingSerializer(interest)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -416,7 +413,7 @@ class CoursesView(APIView):
         if not courses.exists():
             return Response({"message":"Курсы не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
-        paginator = CustomCoursePagination()
+        paginator = StandardResultsSetPagination()
         paginates_courses = paginator.paginate_queryset(courses, request)
 
         serializer = CourseSerializer(paginates_courses, many=True)
@@ -438,7 +435,7 @@ class CoursesViewByName(APIView):
         if not courses.exists():
             return Response({"message":"Курсы не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
-        paginator = CustomCoursePagination()
+        paginator = StandardResultsSetPagination()
         paginates_courses = paginator.paginate_queryset(courses, request)
 
         serializer = CourseSerializer(paginates_courses, many=True)
@@ -452,7 +449,7 @@ class LessonsView(APIView):
         if not lessons.exists():
             return Response ({"message":"Уроки не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
-        paginator = CustomCoursePagination()
+        paginator = StandardResultsSetPagination()
         paginates_lessons = paginator.paginate_queryset(lessons, request)
         serializer = LessonSerializer(paginates_lessons, many=True)
         print("LessonSerializerserializer@@@", serializer.data)
@@ -588,7 +585,7 @@ class BookView(APIView):
             if not books.exists():
                 return Response({"message": "Нет книг"}, status=status.HTTP_404_NOT_FOUND)
             
-            paginator = CustomCoursePagination()
+            paginator = StandardResultsSetPagination()
             paginates_books = paginator.paginate_queryset(books, request)
             serializer = BookSerializer(paginates_books, many=True)
             print("LessonSerializerserializer@@@", serializer.data)

@@ -119,7 +119,7 @@ class Lesson(models.Model):
         ordering = ["order"]
 
     def __str__(self):
-        return f"{self.course}-{self.order}-{self.title}"
+        return f"{self.course} - {self.order} - {self.title}"
     
 class Interesting(models.Model):
     title = models.CharField(max_length=200)

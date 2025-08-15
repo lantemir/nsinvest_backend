@@ -166,4 +166,4 @@ class Meeting(models.Model):
     class Meta:
         verbose_name = "Календарь"
         verbose_name_plural = "Календарь событий"
-        ordering = ['-created_at', '-id']
+        ordering = ['-date', '-id']

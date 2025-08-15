@@ -116,7 +116,9 @@ class Lesson(models.Model):
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["order"]
+        verbose_name = "Урок"
+        verbose_name_plural = "Уроки"
+        ordering = ["course", "order"]
 
     def __str__(self):
         return f"{self.course} - {self.order} - {self.title}"

@@ -103,6 +103,10 @@ class Course(models.Model):
     thumbnail = models.ImageField(upload_to="course_thumbnails/", null=True, blank=True)
     def __str__(self):
         return self.title
+    class Meta:
+        verbose_name = "Курс"
+        verbose_name_plural = "Курсы"
+        ordering = ['-created_at', '-id']
     
 class Lesson(models.Model):
     title = models.CharField(max_length=200)
@@ -130,6 +134,7 @@ class Interesting(models.Model):
     class Meta:
         verbose_name = "Интересное"
         verbose_name_plural = "Интересные"
+        ordering = ['-created_at', '-id']
 
 class Book(models.Model):
     title = models.CharField(max_length=200)
@@ -141,6 +146,10 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+    class Meta:
+        verbose_name = "Книга"
+        verbose_name_plural = "Книги"
+        ordering = ['-created_at', '-id']
     
 class Meeting(models.Model):
     title = models.CharField(max_length=200)
@@ -153,3 +162,8 @@ class Meeting(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.date})"    
+    
+    class Meta:
+        verbose_name = "Календарь"
+        verbose_name_plural = "Календарь событий"
+        ordering = ['-created_at', '-id']

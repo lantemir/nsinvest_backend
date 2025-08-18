@@ -147,7 +147,7 @@ class Book(models.Model):
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.title
+        return f"{self.category} - {self.title}"
     class Meta:
         verbose_name = "Книга"
         verbose_name_plural = "Книги"

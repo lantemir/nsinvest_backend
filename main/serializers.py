@@ -130,20 +130,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "profile"]
     # instance=request.user — объект, который обновляем.    data=request.data — данные от клиента.
-    def update(self, instance, validate_date):  
-        profile_data = validate_date.pop("profile", {})
+    def update(self, instance, validate_data):  
+        profile_data = validate_data.pop("profile", {})
         profile = instance.profile
 
-        instance.username = validate_date.get("username", instance.username)
-        instance.email = validate_date.get("email", instance.email)
+        instance.username = validate_data.get("username", instance.username)
+        instance.email = validate_data.get("email", instance.email)
         instance.save()
 
-        profile.phone_number = profile_data.get("phone_number", None)
-        avatar =profile_data.get("avatar", None)
-
-        if avatar:
-            profile.avatar = avatar
+         # не затираем None, если поле не пришло
+        if "phone_number" in profile_data:
+            profile.phone_number = profile_data.get("phone_number", profile.phone_number)
+        if "avatar" in profile_data and profile_data["avatar"]:
+            profile.avatar = profile_data["avatar"]
         profile.save()
+
+        # profile.phone_number = profile_data.get("phone_number", None)
+        # avatar =profile_data.get("avatar", None)
+
+        # if avatar:
+        #     profile.avatar = avatar
+        # profile.save()
 
         return instance
 

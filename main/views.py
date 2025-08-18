@@ -344,12 +344,17 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def get(self, request):
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data)
-    
     def patch(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        data = request.data.copy()
+        nested = {}
+        if "profile.phone_number" in data:
+            nested["phone_number"] = data.pop("profile.phone_number")
+        if "profile.avatar" in data:
+            nested["avatar"] = data.pop("profile.avatar")
+        if nested:
+            data["profile"] = nested
+
+        serializer = UserProfileSerializer(request.user, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

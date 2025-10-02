@@ -182,18 +182,7 @@ CKEDITOR_5_CONFIGS = {
             '|', 'insertTable', 'imageUpload', 'mediaEmbed',
             'undo', 'redo'
         ],
-
-        # запрет вставки цвета/фона
-        'removePlugins': ['FontColor', 'FontBackgroundColor', 'Highlight'],
-
-          # дополнительно режем html-поддержку
-        'htmlSupport': {
-            'disallow': [
-                { 'name': 'span', 'styles': { 'background-color': True, 'color': True } },
-                { 'name': 'p',    'styles': { 'background-color': True } },
-            ]
-        },
-
+        
     }
 }
 CKEDITOR5_UPLOADS_PATH = "uploads/"

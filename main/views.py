@@ -368,10 +368,10 @@ class CategoryView(APIView):
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
     
-class CustomCoursePagination(PageNumberPagination):
-    page_size = 6
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+# class CustomCoursePagination(PageNumberPagination):
+#     page_size = 6
+#     page_size_query_param = 'page_size'
+#     max_page_size = 100
 
 class InterestingView(APIView):
     permission_classes=[IsAuthenticated]
@@ -450,7 +450,8 @@ class CoursesViewByName(APIView):
 class LessonsView(APIView):
     permission_classes=[IsAuthenticated]
     def get(self, request, course_id):
-        lessons = Lesson.objects.filter(course_id = course_id)
+        lessons = Lesson.objects.filter(course_id = course_id).order_by("id")  
+        
         if not lessons.exists():
             return Response ({"message":"Уроки не найдены для этой категории"}, status=status.HTTP_404_NOT_FOUND)
         
